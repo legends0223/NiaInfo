@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -8,7 +7,6 @@
         href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEMAAABDCAMAAADwFEhBAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAMNQTFRF////////AAAA////////////////////2traq6urqqqq29vb////////tra2BgYGAAAAAAAABwcHu7u7////TExMAAAAAAAAAAAAaWlp////REREZmZmPz8/VVVVu7u7////fX19qqqqZmZmmZmZd3d3iIiI9vb27u7u+Pj4/v7+ERERkJCQgICAiYmJIiIimJiYMzMzAAAAb29v////AAAAAAAADg4O0dHR////29vbrKys5eXl////////////////qYDyEQAAAEF0Uk5TjlUADx8vCSZRdINPJAdfpsnZo1xBl+z/6pVAqqr////////////////////////////jjjjYyJ1VHVFySGR0g3JhKh49AAABA0lEQVR4nO3YTwuCMBQA8D1R0wqDvNW1LxBd+/hdutSnKDpWVv4pWTOmRZPca0aCezAZOH9uc8pzQIAoBgUojJdq9XWUlhgmoAwD4CwYVgdpxBfBGGKIx8B3gkFHNwTB+r3Jb/lm2HJdockHw5E0Im1o449GHWsdEY03unLzASf152IGbTKsIyGDhDcIWXF53T4Q4l1bZ1SHNtpsdNgBQt7AYSXidZflcTSWMoR16vPMS2WtN8HoZae40WfzYQR4ozS0oY0ajaa8L18aXvYN2qsZ1aENhCGZr/vb3+XJyH/1McBKMFB7BpNsk2IpGCbM1vIdmUKaE8x47sPMEYOBdFHU6R0/upyUkJQ0iwAAAABJRU5ErkJggg==">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>行政程序計算</title>
-
     <style>
         body {
             background-color: #f1f5f9;
@@ -58,7 +56,6 @@
         }
     </style>
 </head>
-
 <body class="p-4 md:p-8 relative">
     <div class="max-w-md mx-auto">
         <div class="card overflow-hidden border border-slate-200">
@@ -88,7 +85,7 @@
                             class="flex-1 py-2 rounded-lg text-sm font-bold text-slate-500 transition-all">不利處分</button>
                     </div>
                     <p id="type-desc" class="text-[10px] text-slate-400 mt-2 italic">※ 一般案件：末日遇假日順延。</p>
-                    <p class="text-[10px] text-slate-400 mt-1 italic">※ 國定假日（2018~2026) 其餘計算六日。</p>
+                    <p class="text-[10px] text-slate-400 mt-1 italic">※ 國定假日（2018~2026) 其餘假日只計算六日。</p>
                 </div>
 
                 <hr id="divider" class="mb-6 border-slate-100">
@@ -140,9 +137,10 @@
                             </button>
                         </div>
                     </div>
+
                     <div class="flex gap-3">
                         <div class="flex-[2]">
-                            <label class="block text-xs font-bold text-slate-500 mb-1">期間</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">許可停留期間</label>
                             <input type="number" id="periodValue" value="3"
                                 class="auto-calc w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
@@ -205,6 +203,7 @@
                             </button>
                         </div>
                     </div>
+
                     <div>
                         <label class="block text-xs font-bold text-slate-500 mb-1">受理裁罰日</label>
                         <input type="hidden" id="date-end" class="auto-penalty">
@@ -251,31 +250,33 @@
                             </button>
                         </div>
                     </div>
-
                 </div>
 
                 <div id="result-area" class="mt-8 hidden border-t border-dashed pt-6">
                     <div id="status-card" class="p-5 rounded-2xl transition-all">
                         <div id="res-title" class="text-[10px] font-black uppercase tracking-widest mb-1"></div>
-                        <div id="res-main" class="text-3xl font-black"></div>
+                        <div class="flex items-center gap-3">
+                            <div id="res-main" class="text-3xl font-black"></div>
+                            <button id="btn-transfer" onclick="transferToPenalty()"
+                                class="hidden px-3 py-1.5 bg-white/60 hover:bg-white text-blue-700 text-sm font-bold rounded-lg shadow-sm transition-all border border-blue-200">
+                                帶入裁罰計算 ➔
+                            </button>
+                        </div>
                         <div id="res-sub" class="text-sm font-bold mt-1"></div>
                         <div id="res-total-days" class="text-xs font-bold mt-2 text-slate-600"></div>
                         <div id="res-detail" class="text-xs mt-3 leading-relaxed opacity-80 whitespace-pre-wrap"></div>
                     </div>
                 </div>
 
-                <!-- 中國 / 外國 切換（位於綠色結果下方） -->
                 <div id="nation-switcher" class="hidden mt-4">
                     <div class="flex bg-slate-100 p-1 rounded-xl">
                         <button onclick="setPenaltyNation('china')" id="btn-china"
                             class="btn-active flex-1 py-2 rounded-lg text-sm font-bold transition-all">🇨🇳 中國人</button>
                         <button onclick="setPenaltyNation('foreign')" id="btn-foreign"
-                            class="flex-1 py-2 rounded-lg text-sm font-bold text-slate-500 transition-all">🌏
-                            外國人</button>
+                            class="flex-1 py-2 rounded-lg text-sm font-bold text-slate-500 transition-all">🌏 外國人</button>
                     </div>
                 </div>
 
-                <!-- 罰金顯示區塊（位於切換鈕下方） -->
                 <div id="fine-display" class="hidden mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4">
                     <div class="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">應裁處罰鍰</div>
                     <div id="fine-amount" class="text-2xl font-black text-amber-700"></div>
@@ -326,6 +327,7 @@
         let calIsROC = true;
         let calViewYear = 115;
         let calViewMonth = 1;
+        let calculatedEndDate = null; // 新增：儲存合法期間計算結果的末日
 
         function setYearMode(mode) {
             yearMode = mode;
@@ -481,7 +483,26 @@
             if (currentType === 'normal') actualStart.setDate(actualStart.getDate() + 1);
 
             const total = Math.round((end - actualStart) / 864e5) + 1;
+            calculatedEndDate = end; // 將算出的末日存下供按鈕使用
             showResult("屆滿日期 (末日)", getLocalDateStr(end), weekNames[end.getDay()], detail, "blue", `共計：${total} 天`);
+        }
+
+        // 新增：帶入裁罰計算並自動跳轉
+        function transferToPenalty() {
+            if (!calculatedEndDate) return;
+
+            // 合法末日 + 1 日作為裁罰起算日
+            const penaltyStart = new Date(calculatedEndDate);
+            penaltyStart.setDate(penaltyStart.getDate() + 1);
+
+            // 填入西元欄位並同步
+            document.getElementById('date-start_ce_y').value = penaltyStart.getFullYear();
+            document.getElementById('date-start_ce_m').value = penaltyStart.getMonth() + 1;
+            document.getElementById('date-start_ce_d').value = penaltyStart.getDate();
+            syncDate('date-start', 'CE');
+
+            // 切換至裁罰計算頁籤
+            switchMode('penalty');
         }
 
         let penaltyNation = 'china'; // 'china' or 'foreign'
@@ -532,23 +553,28 @@
             document.getElementById('fine-amount').innerText = `${info.currency} ${info.amount.toLocaleString()} 元`;
             document.getElementById('fine-basis').innerText = `共 ${totalDays} 天　適用級距：${info.basis}`;
             document.getElementById('fine-note').innerText = info.note;
+
             fineBox.classList.remove('hidden');
         }
 
         function runPenalty() {
             const v1 = document.getElementById('date-start').value;
             const v2 = document.getElementById('date-end').value;
+
             if (!v1 || !v2) {
                 lastTotalDays = 0;
                 updateFineDisplay(0);
+                document.getElementById('result-area').classList.add('hidden');
                 return;
             }
 
             const start = parseDate(v1);
             const end = parseDate(v2);
+
             if (!start || !end) {
                 lastTotalDays = 0;
                 updateFineDisplay(0);
+                document.getElementById('result-area').classList.add('hidden');
                 return;
             }
 
@@ -598,6 +624,13 @@
             const tBox = document.getElementById('res-total-days');
             tBox.innerText = total || "";
             tBox.classList.toggle('hidden', !total);
+
+            // 處理帶入按鈕的顯示狀態 (僅在合法期間計算模式下顯示)
+            const transferBtn = document.getElementById('btn-transfer');
+            if (transferBtn) {
+                transferBtn.classList.toggle('hidden', currentMode !== 'calc');
+            }
+
             const themes = { blue: "bg-blue-50 text-blue-700 border-blue-100", rose: "bg-rose-50 text-rose-700 border-rose-100", emerald: "bg-emerald-50 text-emerald-700 border-emerald-100" };
             document.getElementById('status-card').className = `p-5 rounded-2xl border ${themes[color]}`;
         }
@@ -734,5 +767,5 @@
             setYearMode('ROC');
         });
     </script>
-</body version="3.6">
+</body version="1.0">
 </html>
