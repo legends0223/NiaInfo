@@ -255,7 +255,7 @@
                 <div id="result-area" class="mt-8 hidden border-t border-dashed pt-6">
                     <div id="status-card" class="p-5 rounded-2xl transition-all">
                         <div id="res-title" class="text-[10px] font-black uppercase tracking-widest mb-1"></div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-between gap-3">
                             <div id="res-main" class="text-3xl font-black"></div>
                             <button id="btn-transfer" onclick="transferToPenalty()"
                                 class="hidden px-3 py-1.5 bg-white/60 hover:bg-white text-blue-700 text-sm font-bold rounded-lg shadow-sm transition-all border border-blue-200">
@@ -517,7 +517,7 @@
 
         function getFineInfo(totalDays, nation) {
             if (nation === 'china') {
-                // 大陸地區人民（兩岸條例）
+                // 中國人（兩岸條例）
                 let amount, basis;
                 if (totalDays <= 10) { amount = 2000; basis = '逾期 10 日以下'; }
                 else if (totalDays <= 30) { amount = 4000; basis = '逾期 11 日以上，30 日以下'; }
@@ -767,5 +767,5 @@
             setYearMode('ROC');
         });
     </script>
-</body version="1.0">
+</body version="1.1">
 </html>
