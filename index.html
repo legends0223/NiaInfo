@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEMAAABDCAMAAADwFEhBAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAMNQTFRF////////AAAA////////////////////2traq6urqqqq29vb////////tra2BgYGAAAAAAAABwcHu7u7////TExMAAAAAAAAAAAAaWlp////REREZmZmPz8/VVVVu7u7////fX19qqqqZmZmmZmZd3d3iIiI9vb27u7u+Pj4/v7+ERERkJCQgICAiYmJIiIimJiYMzMzAAAAb29v////AAAAAAAADg4O0dHR////29vbrKys5eXl////////////////qYDyEQAAAEF0Uk5TjlUADx8vCSZRdINPJAdfpsnZo1xBl+z/6pVAqqr////////////////////////////jjjjYyJ1VHVFySGR0g3JhKh49AAABA0lEQVR4nO3YTwuCMBQA8D1R0wqDvNW1LxBd+/hdutSnKDpWVv4pWTOmRZPca0aCezAZOH9uc8pzQIAoBgUojJdq9XWUlhgmoAwD4CwYVgdpxBfBGGKIx8B3gkFHNwTB+r3Jb/lm2HJdockHw5E0Im1o449GHWsdEY03unLzASf152IGbTKsIyGDhDcIWXF53T4Q4l1bZ1SHNtpsdNgBQt7AYSXidZflcTSWMoR16vPMS2WtN8HoZae40WfzYQR4ozS0oY0ajaa8L18aXvYN2qsZ1aENhCGZr/vb3+XJyH/1McBKMFB7BpNsk2IpGCbM1vIdmUKaE8x47sPMEYOBdFHU6R0/upyUkJQ0iwAAAABJRU5ErkJggg==">
+    <title>行政程序與裁罰計算系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .modal-enter {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .modal-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+        /* 小三通 Loading 動畫 */
+        .loading-ring { border-top-color: #1e40af; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 p-4 md:p-8 font-sans min-h-screen flex justify-center items-start">
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 overflow-hidden">
+            <div class="flex border-b border-slate-100 bg-slate-50/50">
+                <button onclick="switchMode('calc')" id="tab-calc"
+                    class="flex-1 py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-all text-slate-400 border-transparent hover:text-slate-600">
+                    🗓️ 合法期間
+                </button>
+                <button onclick="switchMode('penalty')" id="tab-penalty"
+                    class="flex-1 py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-all text-slate-400 border-transparent hover:text-slate-600">
+                    ⚠️ 裁罰期間
+                </button>
+                <button onclick="switchMode('matsu')" id="tab-matsu"
+                    class="flex-1 py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-all text-blue-800 border-blue-800">
+                    🚢 小三通
+                </button>
+            </div>
+
+            <div class="p-5 md:p-8">
+                <div id="year-switcher-container" class="hidden flex justify-end mb-6">
+                    <div class="flex bg-slate-100/80 p-1 rounded-lg">
+                        <button onclick="setYearMode('CE')" id="btn-ce"
+                            class="px-4 py-1.5 rounded-md text-xs font-bold transition-all text-slate-500 hover:text-slate-700">西元</button>
+                        <button onclick="setYearMode('ROC')" id="btn-roc"
+                            class="px-4 py-1.5 rounded-md text-xs font-bold transition-all bg-white shadow-sm text-slate-700">民國</button>
+                    </div>
+                </div>
+
+                <div id="section-calc" class="space-y-6 hidden">
+                    <div>
+                        <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">案件性質</label>
+                        <div class="flex bg-slate-100/80 p-1 rounded-xl">
+                            <button onclick="setType('normal')" id="btn-normal"
+                                class="flex-1 py-2 rounded-lg text-sm font-bold transition-all bg-blue-800 text-white shadow-md">一般案件</button>
+                            <button onclick="setType('adverse')" id="btn-adverse"
+                                class="flex-1 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-slate-200/50">不利處分</button>
+                        </div>
+                        <p id="type-desc" class="text-[11px] text-slate-400 mt-2">※ 一般案件：末日遇假日順延。</p>
+                        <p class="text-[11px] text-slate-400 mt-1">※ 國定假日（2018~2026）其餘計算六日。</p>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">入境日</label>
+                        <input type="hidden" id="startDate" class="auto-calc">
+                        <div id="startDate_ce_group" class="hidden flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden w-full focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <span class="pl-4 text-slate-400 text-sm font-bold whitespace-nowrap">西元</span>
+                            <input type="number" id="startDate_ce_y" class="auto-calc-ce w-full p-3 outline-none text-center font-medium" placeholder="年">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="startDate_ce_m" class="auto-calc-ce w-full p-3 outline-none text-center font-medium" placeholder="月">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="startDate_ce_d" class="auto-calc-ce w-full p-3 outline-none text-center font-medium" placeholder="日">
+                            <button onclick="openCalendar('startDate_ce')" class="px-4 py-3 text-slate-400 hover:text-blue-600 bg-slate-50 border-l border-slate-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                        <div id="startDate_roc_group" class="hidden flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden w-full focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <span class="pl-4 text-slate-400 text-sm font-bold whitespace-nowrap">民國</span>
+                            <input type="number" id="startDate_roc_y" class="auto-calc-roc w-full p-3 outline-none text-center font-medium" placeholder="年">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="startDate_roc_m" class="auto-calc-roc w-full p-3 outline-none text-center font-medium" placeholder="月">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="startDate_roc_d" class="auto-calc-roc w-full p-3 outline-none text-center font-medium" placeholder="日">
+                            <button onclick="openCalendar('startDate_roc')" class="px-4 py-3 text-slate-400 hover:text-blue-600 bg-slate-50 border-l border-slate-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="flex-[2]">
+                            <label class="block text-xs font-bold text-slate-500 mb-2">期間</label>
+                            <input type="number" id="periodValue" value="3" class="auto-calc w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-500 mb-2">單位</label>
+                            <select id="periodUnit" class="auto-calc w-full p-3 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-700">
+                                <option value="month">月</option>
+                                <option value="day">日</option>
+                                <option value="year">年</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-penalty" class="space-y-6 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">裁罰起算日</label>
+                        <input type="hidden" id="date-start" class="auto-penalty">
+                        <div id="date-start_ce_group" class="hidden flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden w-full focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <span class="pl-4 text-slate-400 text-sm font-bold whitespace-nowrap">西元</span>
+                            <input type="number" id="date-start_ce_y" class="auto-penalty-ce w-full p-3 outline-none text-center font-medium" placeholder="年">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-start_ce_m" class="auto-penalty-ce w-full p-3 outline-none text-center font-medium" placeholder="月">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-start_ce_d" class="auto-penalty-ce w-full p-3 outline-none text-center font-medium" placeholder="日">
+                            <button onclick="openCalendar('date-start_ce')" class="px-4 py-3 text-slate-400 hover:text-blue-600 bg-slate-50 border-l border-slate-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                        <div id="date-start_roc_group" class="hidden flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden w-full focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <span class="pl-4 text-slate-400 text-sm font-bold whitespace-nowrap">民國</span>
+                            <input type="number" id="date-start_roc_y" class="auto-penalty-roc w-full p-3 outline-none text-center font-medium" placeholder="年">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-start_roc_m" class="auto-penalty-roc w-full p-3 outline-none text-center font-medium" placeholder="月">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-start_roc_d" class="auto-penalty-roc w-full p-3 outline-none text-center font-medium" placeholder="日">
+                            <button onclick="openCalendar('date-start_roc')" class="px-4 py-3 text-slate-400 hover:text-blue-600 bg-slate-50 border-l border-slate-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">受理裁罰日</label>
+                        <input type="hidden" id="date-end" class="auto-penalty">
+                        <div id="date-end_ce_group" class="hidden flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden w-full focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <span class="pl-4 text-slate-400 text-sm font-bold whitespace-nowrap">西元</span>
+                            <input type="number" id="date-end_ce_y" class="auto-penalty-ce w-full p-3 outline-none text-center font-medium" placeholder="年">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-end_ce_m" class="auto-penalty-ce w-full p-3 outline-none text-center font-medium" placeholder="月">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-end_ce_d" class="auto-penalty-ce w-full p-3 outline-none text-center font-medium" placeholder="日">
+                            <button onclick="openCalendar('date-end_ce')" class="px-4 py-3 text-slate-400 hover:text-blue-600 bg-slate-50 border-l border-slate-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                        <div id="date-end_roc_group" class="hidden flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden w-full focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                            <span class="pl-4 text-slate-400 text-sm font-bold whitespace-nowrap">民國</span>
+                            <input type="number" id="date-end_roc_y" class="auto-penalty-roc w-full p-3 outline-none text-center font-medium" placeholder="年">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-end_roc_m" class="auto-penalty-roc w-full p-3 outline-none text-center font-medium" placeholder="月">
+                            <span class="text-slate-300">/</span>
+                            <input type="number" id="date-end_roc_d" class="auto-penalty-roc w-full p-3 outline-none text-center font-medium" placeholder="日">
+                            <button onclick="openCalendar('date-end_roc')" class="px-4 py-3 text-slate-400 hover:text-blue-600 bg-slate-50 border-l border-slate-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="result-area" class="mt-8 hidden pt-6 border-t border-dashed border-slate-200">
+                    <div id="status-card" class="p-6 rounded-2xl transition-all border">
+                        <div id="res-title" class="text-xs font-black uppercase tracking-widest mb-2"></div>
+                        <div id="res-main" class="text-4xl font-black mb-1"></div>
+                        <div id="res-sub" class="text-sm font-bold mt-1"></div>
+                        <div id="res-total-days" class="text-sm font-bold mt-2 opacity-90 hidden"></div>
+                        <div id="res-detail" class="text-sm mt-4 leading-relaxed opacity-80 whitespace-pre-wrap"></div>
+                    </div>
+                </div>
+
+                <div id="nation-switcher" class="hidden mt-6">
+                    <div class="flex bg-slate-100/80 p-1 rounded-xl">
+                        <button onclick="setPenaltyNation('china')" id="btn-china"
+                            class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all bg-blue-800 text-white shadow-md">CN 中國人</button>
+                        <button onclick="setPenaltyNation('foreign')" id="btn-foreign"
+                            class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-slate-200/50">🌏 外國人</button>
+                    </div>
+                </div>
+
+                <div id="fine-display" class="hidden mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm transition-all">
+                    <div class="text-xs font-black uppercase tracking-widest text-amber-600 mb-2">應裁處罰鍰</div>
+                    <div id="fine-amount" class="text-3xl font-black text-amber-700 tracking-tight"></div>
+                    <div id="fine-basis" class="text-sm font-semibold text-amber-600 mt-2 opacity-90"></div>
+                    <div id="fine-note" class="text-[11px] text-amber-500 mt-3 italic leading-relaxed"></div>
+                </div>
+
+                <div id="section-matsu" class="space-y-4">
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-widest">今日即時預報</h2>
+</div>
+                        <p class="text-[11px] text-slate-500 mt-1 font-semibold" id="matsu-updateTime">狀態：初始化中...</p>
+                    </div>
+
+                    <div id="matsu-resultArea" class="space-y-4 mt-2">
+                        <div class="flex flex-col items-center justify-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            <div class="loading-ring w-10 h-10 border-4 border-slate-200 rounded-full mb-3"></div>
+                            <p class="text-xs font-bold text-slate-400 animate-pulse">連線至港務系統中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendar-modal" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-start justify-center px-4 pt-[15vh] pb-8 backdrop-blur-sm">
+        <div id="calendar-card" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden modal-enter border border-slate-100">
+            <div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/80">
+                <button onclick="changeCalMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:shadow-sm transition-all">&lt;</button>
+                <div id="cal-title" class="font-bold text-slate-800 text-lg tracking-wider"></div>
+                <button onclick="changeCalMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:shadow-sm transition-all">&gt;</button>
+            </div>
+            <div class="p-5">
+                <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-3">
+                    <div class="text-rose-400">日</div>
+                    <div>一</div>
+                    <div>二</div>
+                    <div>三</div>
+                    <div>四</div>
+                    <div>五</div>
+                    <div class="text-emerald-500">六</div>
+                </div>
+                <div id="cal-days" class="grid grid-cols-7 gap-y-2 gap-x-1 text-slate-700"></div>
+            </div>
+            <div class="p-4 border-t border-slate-100 flex justify-end bg-slate-50/80">
+                <button onclick="closeCalendar()" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---- 系統變數 ----
+        let HOLIDAY_DATA = {};
+        // 將預設 currentMode 改為 'matsu'
+        let currentType = 'normal', currentMode = 'matsu', yearMode = 'ROC';
+        const weekNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+        const dateFieldIDs = ['startDate', 'date-start', 'date-end'];
+
+        let calTargetPrefix = '';
+        let calIsROC = true;
+        let calViewYear = 115;
+        let calViewMonth = 1;
+
+        // ---- 樣式常數 ----
+        const TAB_ACTIVE = "flex-1 py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-all text-blue-800 border-blue-800";
+        const TAB_INACTIVE = "flex-1 py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-all text-slate-400 border-transparent hover:text-slate-600";
+        
+        const BTN_ACTIVE = "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all bg-blue-800 text-white shadow-md";
+        const BTN_INACTIVE = "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-slate-200/50";
+
+        const YR_ACTIVE = "px-4 py-1.5 rounded-md text-xs font-bold transition-all bg-white shadow-sm text-slate-700";
+        const YR_INACTIVE = "px-4 py-1.5 rounded-md text-xs font-bold transition-all text-slate-500 hover:text-slate-700";
+
+        // ---- UI 切換邏輯 ----
+        function switchMode(m) {
+            currentMode = m;
+            
+            // 區塊顯示控制
+            document.getElementById('section-calc').classList.toggle('hidden', m !== 'calc');
+            document.getElementById('section-penalty').classList.toggle('hidden', m !== 'penalty');
+            document.getElementById('section-matsu').classList.toggle('hidden', m !== 'matsu');
+            document.getElementById('year-switcher-container').classList.toggle('hidden', m === 'matsu');
+            
+            // 標籤樣式控制
+            document.getElementById('tab-calc').className = m === 'calc' ? TAB_ACTIVE : TAB_INACTIVE;
+            document.getElementById('tab-penalty').className = m === 'penalty' ? TAB_ACTIVE : TAB_INACTIVE;
+            document.getElementById('tab-matsu').className = m === 'matsu' ? TAB_ACTIVE : TAB_INACTIVE;
+
+            // 處理結果區顯示/隱藏與特定邏輯
+            if (m === 'matsu') {
+                document.getElementById('result-area').classList.add('hidden');
+                document.getElementById('nation-switcher').classList.add('hidden');
+                document.getElementById('fine-display').classList.add('hidden');
+                
+                if (!matsuInitialized) {
+                    initMatsuDashboard();
+                    matsuInitialized = true;
+                }
+            } else {
+                if (m === 'calc') updateFineDisplay(0);
+                triggerCalc(); // 重新計算並顯示結果
+            }
+        }
+
+        // ---- 計算機邏輯 ----
+        function setYearMode(mode) {
+            yearMode = mode;
+            document.getElementById('btn-ce').className = mode === 'CE' ? YR_ACTIVE : YR_INACTIVE;
+            document.getElementById('btn-roc').className = mode === 'ROC' ? YR_ACTIVE : YR_INACTIVE;
+
+            dateFieldIDs.forEach(id => {
+                document.getElementById(id + '_ce_group').classList.toggle('hidden', mode === 'ROC');
+                document.getElementById(id + '_roc_group').classList.toggle('hidden', mode === 'CE');
+            });
+            triggerCalc();
+        }
+
+        function syncDate(id, source) {
+            const yEl = document.getElementById(id + '_' + source.toLowerCase() + '_y');
+            const mEl = document.getElementById(id + '_' + source.toLowerCase() + '_m');
+            const dEl = document.getElementById(id + '_' + source.toLowerCase() + '_d');
+
+            if (!yEl || !mEl || !dEl) return;
+
+            const y = parseInt(yEl.value);
+            const m = parseInt(mEl.value);
+            const d = parseInt(dEl.value);
+
+            if (isNaN(y) || isNaN(m) || isNaN(d)) {
+                document.getElementById(id).value = '';
+                document.getElementById('result-area').classList.add('hidden');
+                return;
+            }
+
+            if (source === 'CE') {
+                const ceM = ('0' + m).slice(-2);
+                const ceD = ('0' + d).slice(-2);
+                document.getElementById(id).value = `${y}-${ceM}-${ceD}`;
+
+                document.getElementById(id + '_roc_y').value = y - 1911;
+                document.getElementById(id + '_roc_m').value = m;
+                document.getElementById(id + '_roc_d').value = d;
+            } else {
+                const ceY = y + 1911;
+                const ceM = ('0' + m).slice(-2);
+                const ceD = ('0' + d).slice(-2);
+                document.getElementById(id).value = `${ceY}-${ceM}-${ceD}`;
+
+                document.getElementById(id + '_ce_y').value = ceY;
+                document.getElementById(id + '_ce_m').value = m;
+                document.getElementById(id + '_ce_d').value = d;
+            }
+        }
+
+        function triggerCalc() {
+            if (currentMode === 'calc') runCalc(); 
+            else if (currentMode === 'penalty') runPenalty();
+        }
+
+        function setType(t) {
+            currentType = t;
+            document.getElementById('btn-normal').className = t === 'normal' ? BTN_ACTIVE : BTN_INACTIVE;
+            document.getElementById('btn-adverse').className = t === 'adverse' ? BTN_ACTIVE : BTN_INACTIVE;
+            document.getElementById('type-desc').innerText = t === 'normal' ? "※ 一般案件：末日遇假日順延。" : "※ 不利處分：始日計入且不順延。";
+            runCalc();
+        }
+
+        function isHoliday(date) {
+            const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+            if (HOLIDAY_DATA[y] && HOLIDAY_DATA[y][m]) return HOLIDAY_DATA[y][m].charAt(d - 1) === "1";
+            return (date.getDay() === 0 || date.getDay() === 6);
+        }
+
+        function getLocalDateStr(date) {
+            let y = date.getFullYear();
+            let m = ('0' + (date.getMonth() + 1)).slice(-2);
+            let d = ('0' + date.getDate()).slice(-2);
+            if (yearMode === 'ROC') return `${y - 1911}-${m}-${d}`;
+            return `${y}-${m}-${d}`;
+        }
+
+        function parseDate(str) {
+            if (!str) return null;
+            const [y, m, d] = str.split('-').map(Number);
+            const date = new Date(y, m - 1, d);
+            if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+            return date;
+        }
+
+        function getEquivalentDate(start, addedMonths) {
+            let y = start.getFullYear() + Math.floor((start.getMonth() + addedMonths) / 12);
+            let m = (start.getMonth() + addedMonths) % 12;
+            let d = start.getDate();
+            let temp = new Date(y, m, d);
+            if (temp.getMonth() !== m) temp = new Date(y, m + 1, 0);
+            return temp;
+        }
+
+        function runCalc() {
+            const s = document.getElementById('startDate').value;
+            if (!s) return;
+            const p = parseInt(document.getElementById('periodValue').value);
+            const u = document.getElementById('periodUnit').value;
+            if (isNaN(p)) return;
+
+            const start = parseDate(s);
+            if (!start) {
+                document.getElementById('result-area').classList.add('hidden');
+                return;
+            }
+
+            let end, detail;
+
+            if (currentType === 'normal') {
+                if (u === 'day') {
+                    end = new Date(start);
+                    end.setDate(end.getDate() + p);
+                } else if (u === 'month') {
+                    end = getEquivalentDate(start, p);
+                } else {
+                    end = getEquivalentDate(start, p * 12);
+                }
+                let skip = 0;
+                while (isHoliday(end)) { end.setDate(end.getDate() + 1); skip++; }
+                detail = `一般案件：始日不計。` + (skip > 0 ? ` 末日逢假日順延 ${skip} 天。` : "");
+            } else {
+                if (u === 'day') {
+                    end = new Date(start);
+                    end.setDate(end.getDate() + (p - 1));
+                } else {
+                    end = getEquivalentDate(start, u === 'month' ? p : p * 12);
+                    end.setDate(end.getDate() - 1);
+                }
+                detail = "不利處分：始日計入，不順延。";
+            }
+
+            const actualStart = new Date(start);
+            if (currentType === 'normal') actualStart.setDate(actualStart.getDate() + 1);
+
+            const total = Math.round((end - actualStart) / 864e5) + 1;
+            showResult("屆滿日期 (末日)", getLocalDateStr(end), weekNames[end.getDay()], detail, "blue", `共計 ${total} 日`);
+        }
+
+        let penaltyNation = 'china'; 
+        let lastTotalDays = 0; 
+
+        function setPenaltyNation(nation) {
+            penaltyNation = nation;
+            document.getElementById('btn-china').className = nation === 'china' ? BTN_ACTIVE : BTN_INACTIVE;
+            document.getElementById('btn-foreign').className = nation === 'foreign' ? BTN_ACTIVE : BTN_INACTIVE;
+            updateFineDisplay(lastTotalDays);
+        }
+
+        function getFineInfo(totalDays, nation) {
+            if (nation === 'china') {
+                let amount, basis;
+                if (totalDays <= 10) { amount = 2000; basis = '逾期 10 日以下'; }
+                else if (totalDays <= 30) { amount = 4000; basis = '逾期 11 日以上，30 日以下'; }
+                else if (totalDays <= 60) { amount = 6000; basis = '逾期 31 日以上，60 日以下'; }
+                else if (totalDays <= 90) { amount = 8000; basis = '逾期 61 日以上，90 日以下'; }
+                else { amount = 10000; basis = '逾期 91 日以上'; }
+                return { amount, basis, currency: 'NT$', note: '※ 未滿14歲者不罰；14歲以上未滿18歲者減半。依《兩岸條例》裁處。' };
+            } else {
+                let amount, basis;
+                if (totalDays <= 10) { amount = 10000; basis = '逾期 10 日以下'; }
+                else if (totalDays <= 30) { amount = 20000; basis = '逾期 11 日以上，30 日以下'; }
+                else if (totalDays <= 60) { amount = 30000; basis = '逾期 31 日以上，60 日以下'; }
+                else if (totalDays <= 90) { amount = 40000; basis = '逾期 61 日以上，90 日以下'; }
+                else { amount = 50000; basis = '逾期 91 日以上'; }
+                return { amount, basis, currency: 'NT$', note: '※ 依《入出國及移民法》第74條之1裁處。' };
+            }
+        }
+
+        function updateFineDisplay(totalDays) {
+            const fineBox = document.getElementById('fine-display');
+            const nationBox = document.getElementById('nation-switcher');
+
+            if (totalDays <= 0) {
+                fineBox.classList.add('hidden');
+                nationBox.classList.add('hidden');
+                return;
+            }
+
+            nationBox.classList.remove('hidden');
+            const info = getFineInfo(totalDays, penaltyNation);
+            
+            document.getElementById('fine-amount').innerText = `${info.currency} ${info.amount.toLocaleString()} 元`;
+            document.getElementById('fine-basis').innerText = `共 ${totalDays} 天　適用級距：${info.basis}`;
+            document.getElementById('fine-note').innerText = info.note;
+            
+            fineBox.classList.remove('hidden');
+        }
+
+        function runPenalty() {
+            const v1 = document.getElementById('date-start').value;
+            const v2 = document.getElementById('date-end').value;
+            
+            if (!v1 || !v2) {
+                lastTotalDays = 0;
+                updateFineDisplay(0);
+                return;
+            }
+
+            const start = parseDate(v1);
+            const end = parseDate(v2);
+            
+            if (!start || !end) {
+                lastTotalDays = 0;
+                updateFineDisplay(0);
+                return;
+            }
+
+            if (start > end) {
+                lastTotalDays = 0;
+                updateFineDisplay(0);
+                return showResult("錯誤", "日期順序有誤", "", "起算日不可晚於受理日", "rose", "");
+            }
+
+            const totalDays = Math.round((end - start) / 864e5) + 1;
+            lastTotalDays = totalDays;
+            updateFineDisplay(totalDays);
+
+            let totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+            let tempDate = getEquivalentDate(start, totalMonths);
+            if (tempDate > end) { totalMonths--; tempDate = getEquivalentDate(start, totalMonths); }
+
+            let years = Math.floor(totalMonths / 12), months = totalMonths % 12;
+            let remainDays = Math.round((end - tempDate) / 864e5) + 1;
+
+            let resStr = "";
+            if (years > 0) resStr += years + "年";
+            if (months > 0) resStr += months + "個月";
+            if (remainDays > 0 || resStr === "") resStr += remainDays + "日";
+
+            let detailHtml = "";
+            if (totalMonths > 0) {
+                let endOfPeriod = new Date(tempDate);
+                endOfPeriod.setDate(endOfPeriod.getDate() - 1);
+                detailHtml += `起算日為 ${getLocalDateStr(start)}，至相當日前一日 ${getLocalDateStr(endOfPeriod)}，計 ${years > 0 ? years + '年' : ''}${months > 0 ? months + '個月' : ''}。\n`;
+                if (remainDays > 0) detailHtml += `餘額 ${getLocalDateStr(tempDate)} 至 ${getLocalDateStr(end)}，計 ${remainDays} 日。\n`;
+                detailHtml += `共計 ${totalDays} 日。`;
+            } else {
+                detailHtml += `起算日為 ${getLocalDateStr(start)}，至 ${getLocalDateStr(end)}，不足 1 個月。\n共計 ${remainDays} 日。`;
+            }
+            
+            showResult("計算結果", resStr, ``, detailHtml, "emerald", "");
+        }
+
+        function showResult(t, m, s, d, color, total) {
+            document.getElementById('result-area').classList.remove('hidden');
+            document.getElementById('res-title').innerText = t;
+            document.getElementById('res-main').innerText = m;
+            document.getElementById('res-sub').innerText = s;
+            document.getElementById('res-detail').innerText = d;
+
+            const tBox = document.getElementById('res-total-days');
+            tBox.innerText = total || "";
+            tBox.classList.toggle('hidden', !total);
+            
+            const themes = { 
+                blue: "bg-blue-50 text-blue-800 border-blue-100", 
+                rose: "bg-rose-50 text-rose-800 border-rose-100", 
+                emerald: "bg-emerald-50 text-emerald-800 border-emerald-100" 
+            };
+            document.getElementById('status-card').className = `p-6 rounded-2xl border ${themes[color]}`;
+        }
+
+        // ---- 月曆選取 ----
+        function openCalendar(targetPrefix) {
+            calTargetPrefix = targetPrefix;
+            calIsROC = targetPrefix.endsWith('_roc');
+
+            const inputY = document.getElementById(targetPrefix + '_y').value;
+            const inputM = document.getElementById(targetPrefix + '_m').value;
+
+            if (inputY && inputM) {
+                calViewYear = parseInt(inputY);
+                calViewMonth = parseInt(inputM);
+            } else {
+                const now = new Date();
+                calViewYear = calIsROC ? (now.getFullYear() - 1911) : now.getFullYear();
+                calViewMonth = now.getMonth() + 1;
+            }
+
+            renderCalendar();
+            
+            const modal = document.getElementById('calendar-modal');
+            const card = document.getElementById('calendar-card');
+            modal.classList.remove('hidden');
+
+            card.classList.remove('modal-enter-active');
+            void card.offsetWidth; 
+            card.classList.add('modal-enter-active');
+        }
+
+        function closeCalendar() {
+            document.getElementById('calendar-modal').classList.add('hidden');
+        }
+
+        function changeCalMonth(delta) {
+            calViewMonth += delta;
+            if (calViewMonth > 12) { calViewMonth = 1; calViewYear++; }
+            if (calViewMonth < 1) { calViewMonth = 12; calViewYear--; }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const ceYear = calIsROC ? calViewYear + 1911 : calViewYear;
+            const firstDay = new Date(ceYear, calViewMonth - 1, 1).getDay();
+            const daysInMonth = new Date(ceYear, calViewMonth, 0).getDate();
+
+            const titlePrefix = calIsROC ? '民國' : '西元';
+            document.getElementById('cal-title').innerText = `${titlePrefix} ${calViewYear} 年 ${calViewMonth} 月`;
+
+            let html = '';
+            for (let i = 0; i < firstDay; i++) {
+                html += `<div></div>`;
+            }
+
+            const selY = parseInt(document.getElementById(calTargetPrefix + '_y').value);
+            const selM = parseInt(document.getElementById(calTargetPrefix + '_m').value);
+            const selD = parseInt(document.getElementById(calTargetPrefix + '_d').value);
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isSelected = (selY === calViewYear && selM === calViewMonth && selD === d);
+                const bgClass = isSelected ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2" : "hover:bg-blue-50 text-slate-700";
+                html += `<div class="cursor-pointer rounded-full flex items-center justify-center aspect-square text-sm font-semibold transition-all ${bgClass}" onclick="selectDate(${calViewYear}, ${calViewMonth}, ${d})">${d}</div>`;
+            }
+            document.getElementById('cal-days').innerHTML = html;
+        }
+
+        function selectDate(y, m, d) {
+            document.getElementById(calTargetPrefix + '_y').value = y;
+            document.getElementById(calTargetPrefix + '_m').value = m;
+            document.getElementById(calTargetPrefix + '_d').value = d;
+
+            const baseId = calTargetPrefix.replace('_roc', '').replace('_ce', '');
+            const sourceMode = calIsROC ? 'ROC' : 'CE';
+
+            syncDate(baseId, sourceMode);
+            triggerCalc();
+            closeCalendar();
+        }
+
+
+        // ---- 小三通即時看板邏輯 (LocalStorage 1分鐘快取) ----
+        let matsuInitialized = false;
+        const CACHE_KEY = 'matsu_ferry_data';
+        const CACHE_TIME_KEY = 'matsu_ferry_time';
+        const CACHE_EXPIRY = 60 * 1000; // 1 分鐘 (毫秒)
+
+        function initMatsuDashboard() {
+            fetchMatsuData(false);
+        }
+
+        async function fetchMatsuData(forceRefresh = false) {
+            const updateTimeLabel = document.getElementById('matsu-updateTime');
+            const resultArea = document.getElementById('matsu-resultArea');
+            const now = new Date().getTime();
+
+            // 如果不是強制刷新，則檢查 localStorage
+            if (!forceRefresh) {
+                const cachedData = localStorage.getItem(CACHE_KEY);
+                const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+
+                if (cachedData && cachedTime && (now - parseInt(cachedTime) < CACHE_EXPIRY)) {
+                    const cacheDate = new Date(parseInt(cachedTime));
+                    const timeStr = `${cacheDate.getHours().toString().padStart(2, '0')}:${cacheDate.getMinutes().toString().padStart(2, '0')}:${cacheDate.getSeconds().toString().padStart(2, '0')}`;
+                    updateTimeLabel.textContent = `狀態：讀取本地快取 (${timeStr})`;
+                    parseMatsuData(cachedData, resultArea);
+                    return;
+                }
+            }
+
+            // 無快取、已過期，或使用者點擊「重新整理」
+            updateTimeLabel.textContent = '狀態：正在連線抓取最新資料...';
+            // 顯示 Loading
+            resultArea.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <div class="loading-ring w-10 h-10 border-4 border-slate-200 rounded-full mb-3"></div>
+                    <p class="text-xs font-bold text-slate-400 animate-pulse">連線至港務系統中...</p>
+                </div>
+            `;
+            
+            try {
+                const targetUrl = 'https://port.mtha.gov.tw/MOBWeb/PortVesselList';
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) throw new Error('伺服器連線中斷或阻擋');
+                
+                const html = await response.text();
+                
+                // 寫入 localStorage 
+                localStorage.setItem(CACHE_KEY, html);
+                localStorage.setItem(CACHE_TIME_KEY, now.toString());
+
+                parseMatsuData(html, resultArea);
+                
+                const freshDate = new Date();
+                updateTimeLabel.textContent = `狀態：取得最新資料 (${freshDate.getHours().toString().padStart(2, '0')}:${freshDate.getMinutes().toString().padStart(2, '0')}:${freshDate.getSeconds().toString().padStart(2, '0')})`;
+            } catch (err) {
+                updateTimeLabel.textContent = '狀態：更新失敗';
+                resultArea.innerHTML = `<div class="p-6 text-center text-rose-500 bg-rose-50 rounded-2xl border border-rose-100 text-sm font-bold">無法取得船班資料：${err.message}</div>`;
+            }
+        }
+
+        function parseMatsuData(html, container) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const vesselCards = doc.querySelectorAll('.card');
+            
+            let foundData = false;
+            let finalHtml = '';
+
+            vesselCards.forEach(card => {
+                const header = card.querySelector('.card-header');
+                if (!header) return;
+
+                const typeText = header.querySelector('h5')?.textContent || '';
+                if (!typeText.includes('小三通')) return;
+
+                foundData = true;
+                const shipName = header.querySelector('h4')?.textContent.trim() || '未知船名';
+                
+                let rowsHtml = '';
+                const items = card.querySelectorAll('.list-group-item');
+                
+                for (let i = 1; i < items.length; i++) {
+                    const rowDivs = items[i].querySelectorAll('.row');
+                    if (rowDivs.length >= 2) {
+                        const ports = rowDivs[0].querySelectorAll('.col-6');
+                        const times = rowDivs[1].querySelectorAll('.col-6');
+                        
+                        rowsHtml += `
+                            <div class="p-3 border-b border-slate-100 last:border-0 bg-white hover:bg-blue-50/50 transition duration-200">
+                                <div class="flex justify-between items-center text-sm mb-1.5">
+                                    <span class="font-bold text-slate-700">${ports[0].textContent.trim()}</span>
+                                    <span class="text-slate-300 text-xs">→</span>
+                                    <span class="font-bold text-slate-700">${ports[1].textContent.trim()}</span>
+                                </div>
+                                <div class="flex justify-between items-center font-mono text-xs font-bold">
+                                    <span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${times[0].textContent.trim()}</span>
+                                    <span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">${times[1].textContent.trim()}</span>
+                                </div>
+                            </div>`;
+                    }
+                }
+
+                finalHtml += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit">
+                        <div class="bg-blue-800 text-white px-5 py-3 flex justify-between items-center">
+                            <span class="font-bold tracking-wide">${shipName}</span>
+                            <span class="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded border border-white/10 font-medium tracking-widest">小三通</span>
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                            ${rowsHtml}
+                        </div>
+                    </div>`;
+            });
+
+            if (!foundData) {
+                container.innerHTML = '<div class="text-center py-16 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200 font-bold text-sm">目前暫無今日預報資料</div>';
+            } else {
+                container.innerHTML = finalHtml;
+            }
+        }
+
+        // ---- 初始化 ----
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('holiday.json');
+                if (response.ok) {
+                    HOLIDAY_DATA = await response.json();
+                }
+            } catch (error) {
+                // Ignore missing JSON
+            }
+
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = today.getMonth() + 1;
+            const d = today.getDate();
+
+            dateFieldIDs.forEach(id => {
+                document.getElementById(id + '_ce_y').value = y;
+                document.getElementById(id + '_ce_m').value = m;
+                document.getElementById(id + '_ce_d').value = d;
+                syncDate(id, 'CE');
+            });
+
+            document.querySelectorAll('.auto-calc-ce, .auto-calc-roc, .auto-penalty-ce, .auto-penalty-roc, .auto-calc').forEach(el => {
+                el.addEventListener('input', (e) => {
+                    const id = e.target.id;
+                    if (id.includes('_ce_') || id.includes('_roc_')) {
+                        const baseId = id.replace(/_(ce|roc)_(y|m|d)$/, '');
+                        const source = id.includes('_ce_') ? 'CE' : 'ROC';
+                        syncDate(baseId, source);
+                    }
+                    triggerCalc();
+                });
+            });
+
+            setYearMode('ROC');
+            
+            // 加入此行：在載入完成後預設跳轉至小三通標籤並自動抓取資料
+            switchMode('matsu');
+        });
+    </script>
+</body version="5.1">
+</html>
