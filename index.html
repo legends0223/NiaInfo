@@ -481,7 +481,7 @@
             if (currentType === 'normal') actualStart.setDate(actualStart.getDate() + 1);
 
             const total = Math.round((end - actualStart) / 864e5) + 1;
-            showResult("屆滿日期 (末日)", getLocalDateStr(end) + `, 共 ${total} 日`, weekNames[end.getDay()], detail, "blue", ``);
+            showResult("屆滿日期 (末日)", getLocalDateStr(end), weekNames[end.getDay()], detail, "blue", `共計：${total} 天`);
         }
 
         let penaltyNation = 'china'; // 'china' or 'foreign'
@@ -734,7 +734,5 @@
             setYearMode('ROC');
         });
     </script>
-</body>
-<div version="3.5"></div>
-
+</body version="3.6">
 </html>
